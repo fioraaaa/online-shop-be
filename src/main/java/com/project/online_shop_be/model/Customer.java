@@ -3,6 +3,8 @@ package com.project.online_shop_be.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Data
@@ -11,7 +13,6 @@ public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long customerId;
-
     @Column(name = "customer_name", nullable = false)
     private String customerName;
     @Column(name = "customer_address")
@@ -26,4 +27,6 @@ public class Customer {
     private Date lastOrderDate;
     @Column(name = "pic")
     private String pic;
+    @OneToMany(mappedBy = "customer")
+    private Set<Order> orders;
 }
