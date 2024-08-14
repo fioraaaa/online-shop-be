@@ -1,11 +1,15 @@
 package com.project.online_shop_be.service;
 
 import com.project.online_shop_be.dto.CustomerDto;
+import com.project.online_shop_be.dto.CustomerResponseDto;
 import com.project.online_shop_be.model.Customer;
 import com.project.online_shop_be.repository.CustomerRepository;
 import lib.minio.MinioSrvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,10 +33,10 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    public Customer addCustomer(CustomerDto customerDto, MultipartFile file) {
+    public Customer addCustomer(CustomerDto customerDto, MultipartFile pic) {
         String bucketName = "online-shop";
-        String fileName = System.currentTimeMillis() + "_-_" + file.getOriginalFilename().replace(" ", "_");
-        minioSrvc.upload(file, bucketName, o -> MinioSrvc.UploadOption.builder().filename(fileName).build());
+        String fileName = System.currentTimeMillis() + "_-_" + pic.getOriginalFilename().replace(" ", "_");
+        minioSrvc.upload(pic, bucketName, o -> MinioSrvc.UploadOption.builder().filename(fileName).build());
 
         Customer customer = new Customer();
         customer.setCustomerName(customerDto.getCustomerName());
@@ -45,7 +49,7 @@ public class CustomerService {
         return customerRepository.save(customer);
     }
 
-    public Customer updateCustomer(Long customerId, CustomerDto customerDto, MultipartFile file) {
+    public Customer updateCustomer(Long customerId, CustomerDto customerDto, MultipartFile pic) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer tidak ditemukan"));
 
@@ -71,10 +75,10 @@ public class CustomerService {
         }
 
         // Handle file upload if present
-        if (customerDto.getFile() != null && !customerDto.getFile().isEmpty()) {
+        if (customerDto.getPic() != null && !customerDto.getPic().isEmpty()) {
             String bucketName = "online-shop";
-            String fileName = System.currentTimeMillis() + "_-_" + file.getOriginalFilename().replace(" ", "_");
-            minioSrvc.upload(file, bucketName, o -> MinioSrvc.UploadOption.builder().filename(fileName).build());
+            String fileName = System.currentTimeMillis() + "_-_" + pic.getOriginalFilename().replace(" ", "_");
+            minioSrvc.upload(pic, bucketName, o -> MinioSrvc.UploadOption.builder().filename(fileName).build());
             customer.setPic(fileName);
         }
 
@@ -85,12 +89,42 @@ public class CustomerService {
         customerRepository.deleteById(customerId);
     }
 
-    public Customer getCustomerById(Long customerId) {
-        Optional<Customer> optionalCustomer = customerRepository.findById(customerId);
-        return optionalCustomer.orElse(null);
+    public boolean existsById(Long customerId) {
+        return customerRepository.existsById(customerId);
+    }
+    public CustomerResponseDto getCustomerById(Long customerId) {
+        return customerRepository.findById(customerId)
+                .map(customer -> {
+                    String picUrl = minioSrvc.getLink("online-shop", customer.getPic(), 3600L);
+                    return new CustomerResponseDto(
+                            customer.getCustomerId(),
+                            customer.getCustomerName(),
+                            customer.getCustomerAddress(),
+                            customer.getCustomerCode(),
+                            customer.getCustomerPhone(),
+                            customer.getIsActive(),
+                            customer.getLastOrderDate(),
+                            picUrl
+                    );
+                })
+                .orElse(null);
     }
 
-    public List<Customer> getAllCustomers() {
-        return customerRepository.findAll();
+    public Page<CustomerResponseDto> getCustomers(int page, int size) {
+        Page<Customer> customerPage = customerRepository.findAll(PageRequest.of(page, size));
+        return customerPage.map(customer -> {
+            String bucketName = "online-shop";
+            String pic = minioSrvc.getLink(bucketName, customer.getPic(), 3600L);
+            return new CustomerResponseDto(
+                    customer.getCustomerId(),
+                    customer.getCustomerName(),
+                    customer.getCustomerAddress(),
+                    customer.getCustomerCode(),
+                    customer.getCustomerPhone(),
+                    customer.getIsActive(),
+                    customer.getLastOrderDate(),
+                    pic
+            );
+        });
     }
 }

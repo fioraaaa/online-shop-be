@@ -15,6 +15,6 @@ public class CustomerDto {
     private Boolean isActive;
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date lastOrderDate;
-    private MultipartFile file;
+    private MultipartFile pic;
 
 }

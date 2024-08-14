@@ -1,13 +1,18 @@
 package com.project.online_shop_be.controller;
 
 import com.project.online_shop_be.dto.CustomerDto;
+import com.project.online_shop_be.dto.CustomerResponseDto;
 import com.project.online_shop_be.model.Customer;
+import com.project.online_shop_be.model.Item;
 import com.project.online_shop_be.repository.CustomerRepository;
 import com.project.online_shop_be.service.CustomerService;
 import lib.minio.MinioSrvc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,18 +42,18 @@ public class CustomerController {
 
     @PostMapping
     public ResponseEntity<Customer> addCustomer(@ModelAttribute CustomerDto customerDto,
-                                                @RequestParam("file") MultipartFile file) {
+                                                @RequestParam("pic") MultipartFile pic) {
         logger.info("Received CustomerDto: {}", customerDto);
-        Customer customer = customerService.addCustomer(customerDto, file);
+        Customer customer = customerService.addCustomer(customerDto, pic);
         return ResponseEntity.status(HttpStatus.CREATED).body(customer);
     }
 
     @PutMapping("/{customerId}")
     public ResponseEntity<?> updateCustomer(@PathVariable Long customerId,
                                             @ModelAttribute CustomerDto customerDto,
-                                            @RequestParam(value = "file", required = false) MultipartFile file) {
+                                            @RequestParam(value = "pic", required = false) MultipartFile pic) {
         try {
-            Customer customer = customerService.updateCustomer(customerId, customerDto, file);
+            Customer customer = customerService.updateCustomer(customerId, customerDto, pic);
             return ResponseEntity.ok(customer);
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
@@ -58,26 +63,27 @@ public class CustomerController {
     }
 
     @DeleteMapping("/{customerId}")
-    public ResponseEntity<String> deleteCustomer(@PathVariable Long customerId) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable Long customerId) {
         try {
             customerService.deleteCustomer(customerId);
-            return ResponseEntity.ok("Customer berhasil dihapus");
+            return ResponseEntity.noContent().build(); // 204 No Content
         } catch (Exception ex) {
             logger.error("Error deleting customer with ID " + customerId, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Customer tidak dapat dihapus");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     @GetMapping("/{customerId}")
-    public ResponseEntity<Customer> getCustomerById(@PathVariable Long customerId) {
-        Customer customer = customerService.getCustomerById(customerId);
-        return customer != null ? ResponseEntity.ok(customer) : ResponseEntity.notFound().build();
+    public ResponseEntity<CustomerResponseDto> getCustomerById(@PathVariable Long customerId) {
+        CustomerResponseDto customerDto = customerService.getCustomerById(customerId);
+        return customerDto != null ? ResponseEntity.ok(customerDto) : ResponseEntity.notFound().build();
     }
 
     @GetMapping
-    public ResponseEntity<List<Customer>> getAllCustomers() {
-        List<Customer> customers = customerService.getAllCustomers();
-        return ResponseEntity.ok(customers);
+    public ResponseEntity<Page<CustomerResponseDto>> getCustomers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        Page<CustomerResponseDto> customerPage = customerService.getCustomers(page, size);
+        return ResponseEntity.ok(customerPage);
     }
 }
