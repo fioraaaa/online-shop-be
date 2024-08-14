@@ -25,4 +25,25 @@ public class Order {
     @ManyToOne
     @JoinColumn(name = "items_id", nullable = false)
     private Item item;
+
+    public String getCustomerName() {
+        return customer.getCustomerName();
+    }
+
+    public String getItemName() {
+        return item.getItemsName();
+    }
+
+    public String getCustomerAddress() {
+        return customer.getCustomerAddress();
+    }
+
+    public String getCustomerPhone() {
+        return customer.getCustomerPhone();
+    }
+
+    public Integer getPrice() {
+        return item.getPrice();
+    }
+
 }

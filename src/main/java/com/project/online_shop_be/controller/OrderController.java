@@ -5,10 +5,16 @@ import com.project.online_shop_be.model.Item;
 import com.project.online_shop_be.model.Order;
 import com.project.online_shop_be.repository.OrderRepository;
 import com.project.online_shop_be.service.OrderService;
+import com.project.online_shop_be.service.ReportService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -25,10 +31,12 @@ public class OrderController {
     @Autowired
     private final OrderService orderService;
     private final OrderRepository orderRepository;
+    private final ReportService reportService;
 
-    public OrderController(OrderService orderService, OrderRepository orderRepository) {
+    public OrderController(OrderService orderService, OrderRepository orderRepository, ReportService reportService) {
         this.orderService = orderService;
         this.orderRepository = orderRepository;
+        this.reportService = reportService;
     }
 
     @PostMapping
@@ -54,11 +62,10 @@ public class OrderController {
     public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
         try {
             orderService.deleteOrder(orderId);
-            return ResponseEntity.ok("Order berhasil dihapus");
+            return ResponseEntity.noContent().build(); // 204 No Content
         } catch (Exception ex) {
             logger.error("Error deleting order with ID " + orderId, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Order tidak dapat dihapus");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -69,8 +76,26 @@ public class OrderController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-        List<Order> orders = orderService.getAllOrders();
-        return ResponseEntity.ok(orders);
+    public ResponseEntity<Page<Order>> getOrders(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Order> ordersPage = orderService.getAllOrders(page, size);
+        return ResponseEntity.ok(ordersPage);
+    }
+
+    @GetMapping("/report/{orderId}")
+    public ResponseEntity<byte[]> downloadOrderReport(@PathVariable Long orderId) {
+        try {
+            byte[] pdfBytes = reportService.generateOrderReport(orderId);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "order_report_" + orderId + ".pdf");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
