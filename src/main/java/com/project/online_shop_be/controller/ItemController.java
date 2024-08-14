@@ -1,5 +1,6 @@
 package com.project.online_shop_be.controller;
 
+import com.project.online_shop_be.dto.CustomerResponseDto;
 import com.project.online_shop_be.dto.ItemDto;
 import com.project.online_shop_be.model.Item;
 import com.project.online_shop_be.repository.ItemRepository;
@@ -7,6 +8,9 @@ import com.project.online_shop_be.service.ItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -53,11 +57,10 @@ public class ItemController {
     public ResponseEntity<String> deleteItem(@PathVariable Long itemId) {
         try {
             itemService.deleteItem(itemId);
-            return ResponseEntity.ok("Item berhasil dihapus");
+            return ResponseEntity.noContent().build(); // 204 No Content
         } catch (Exception ex) {
             logger.error("Error deleting item with ID " + itemId, ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Item tidak dapat dihapus");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
@@ -68,8 +71,10 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Item>> getAllItems() {
-        List<Item> item = itemService.getAllItems();
-        return ResponseEntity.ok(item);
+    public ResponseEntity<Page<Item>> getItems(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        Page<Item> itemPage = itemService.getAllItems(page, size);
+        return ResponseEntity.ok(itemPage);
     }
 }
