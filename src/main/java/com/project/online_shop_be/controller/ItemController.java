@@ -1,6 +1,5 @@
 package com.project.online_shop_be.controller;
 
-import com.project.online_shop_be.dto.CustomerResponseDto;
 import com.project.online_shop_be.dto.ItemDto;
 import com.project.online_shop_be.model.Item;
 import com.project.online_shop_be.repository.ItemRepository;
@@ -9,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

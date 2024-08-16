@@ -52,5 +52,31 @@ public class ReportService {
         // Export report to PDF
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
+
+    public byte[] generateAllOrdersReport() throws Exception {
+        // Load .jrxml template
+        Resource resource = resourceLoader.getResource("classpath:reports/all_orders_report.jrxml");
+        InputStream inputStream = resource.getInputStream();
+
+        // Compile .jrxml to .jasper
+        JasperReport jasperReport = JasperCompileManager.compileReport(inputStream);
+
+        // Fetch all orders from the database
+        List<Order> orders = orderRepository.findAll();
+
+        // Check if orders is not empty
+        if (orders.isEmpty()) {
+            throw new RuntimeException("No orders found");
+        }
+
+        // Provide data source
+        JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(orders);
+
+        // Fill the report
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, new HashMap<>(), dataSource);
+
+        // Export report to PDF
+        return JasperExportManager.exportReportToPdf(jasperPrint);
+    }
 }
 

@@ -10,7 +10,6 @@ import com.project.online_shop_be.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -53,11 +52,10 @@ public class OrderService {
         }
         item.setStock(updatedQuantity);
 
-        // Calculate the total price based on quantity and item price
+        // Menghitung total price berdasarkan quantity dan item price
         int totalPrice = orderDto.getQuantity() * item.getPrice();
         order.setTotalPrice(totalPrice);
 
-        // Menyimpan perubahan pada item
         itemRepository.save(item);
 
         order.setItem(item);
@@ -71,17 +69,12 @@ public class OrderService {
 
         System.out.println("Updating Order with details: " + orderDto);
 
-        // Periksa dan update orderCode jika tersedia
         if (orderDto.getOrderCode() != null) {
             order.setOrderCode(orderDto.getOrderCode());
         }
-
-        // Periksa dan update orderDate jika tersedia
         if (orderDto.getOrderDate() != null) {
             order.setOrderDate(orderDto.getOrderDate());
         }
-
-        // Periksa dan update quantity jika tersedia
         if (orderDto.getQuantity() != null) {
             // Mengembalikan stok item lama sebelum mengupdate item baru
             Item oldItem = order.getItem();
@@ -102,11 +95,10 @@ public class OrderService {
                 }
                 item.setStock(updatedStock);
 
-                // Update item pada order
                 order.setItem(item);
                 itemRepository.save(item);
 
-                // Recalculate the total price based on new quantity and item price
+                // Menghitung ulang total price
                 int totalPrice = orderDto.getQuantity() * item.getPrice();
                 order.setTotalPrice(totalPrice);
             } else {
@@ -121,8 +113,6 @@ public class OrderService {
             // Update quantity pada order
             order.setQuantity(orderDto.getQuantity());
         }
-
-        // Periksa dan update customer jika customerId tersedia
         if (orderDto.getCustomerId() != null) {
             Customer customer = customerRepository.findById(orderDto.getCustomerId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer tidak ditemukan"));
@@ -131,7 +121,6 @@ public class OrderService {
 
         return orderRepository.save(order);
     }
-
 
     public void deleteOrder(Long orderId) {
         orderRepository.deleteById(orderId);

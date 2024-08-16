@@ -62,7 +62,7 @@ public class OrderController {
     public ResponseEntity<String> deleteOrder(@PathVariable Long orderId) {
         try {
             orderService.deleteOrder(orderId);
-            return ResponseEntity.noContent().build(); // 204 No Content
+            return ResponseEntity.noContent().build();
         } catch (Exception ex) {
             logger.error("Error deleting order with ID " + orderId, ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -98,4 +98,21 @@ public class OrderController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/report")
+    public ResponseEntity<byte[]> downloadAllOrdersReport() {
+        try {
+            byte[] pdfBytes = reportService.generateAllOrdersReport();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData("attachment", "all_orders_report.pdf");
+
+            return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }
